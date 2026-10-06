@@ -568,14 +568,25 @@ bun db:migrate     # against agentset_comp — check DATABASE_URL first
 bun db:generate    # then RESTART the dev server
 ```
 
-The server is currently running detached, so it survives a closed session. To
-restart it the same way:
+**This instance runs a production build, not `next dev`.** No dev indicator, no
+error overlay, pre-rendered pages — and **no hot reload**: a code change reaches
+comp.rfeeq.ai only after a rebuild and a restart.
 
 ```bash
 cd /home/ubuntu/app/comp/agentset/apps/web
-setsid nohup bun --env-file=../../.env run next dev \
-  >> /home/ubuntu/app/comp/next-dev.log 2>&1 < /dev/null & disown
+bun run build                      # ~2 min; log at ../../next-build.log
+pkill -f "next-server" ...         # ONLY the /comp/ pids — check cwd first
+setsid nohup bun --env-file=../../.env run next start \
+  >> /home/ubuntu/app/comp/next-prod.log 2>&1 < /dev/null & disown
 ```
+
+To go back to hot reload for a working session, swap `next start` for `next dev`
+and log to `next-dev.log`.
+
+**Build it with the dev server stopped.** After a long session the dev
+`next-server` had grown to **7.1 GB**, and with both instances' servers up the
+box was at 14/14 GB with 25 GB of swap in use — the build thrashed and made no
+progress until that process was killed. Check `free -h` before building.
 
 Check which instance owns a port before killing anything — `pgrep -f "next dev"`
 matches both checkouts, and the live app is the one under `/home/ubuntu/app/qaf/`.
