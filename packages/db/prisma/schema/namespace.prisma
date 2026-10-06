@@ -1,0 +1,149 @@
+enum NamespaceStatus {
+  ACTIVE
+  DELETING
+}
+
+model Namespace {
+  id   String @id @default(cuid())
+  name String
+  slug String
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  /// Which kind of material this corpus holds, and therefore which retrieval
+  /// instructions suit it. A classical corpus wants queries shaped like a bāb
+  /// heading; a fatwa corpus wants the register a questioner would use. Stored
+  /// on the namespace rather than inferred from the retrieval mode, because a
+  /// comparison run searches several corpora at once and each pane needs the
+  /// prompt for the corpus it is actually searching.
+  corpusProfile CorpusProfile @default(CLASSICAL)
+
+  /// [NamespaceEmbeddingConfig]
+  embeddingConfig Json?
+
+  /// [NamespaceVectorStoreConfig]
+  vectorStoreConfig Json?
+
+  /// [NamespaceFileStoreConfig]
+  fileStoreConfig Json?
+
+  connections Connection[]
+  ingestJobs  IngestJob[]
+  documents   Document[]
+  webhooks    NamespaceWebhook[]
+  chats       Chat[]
+
+  demoId String?
+
+  totalIngestJobs      Int   @default(0) // Total number of ingest jobs in the namespace
+  totalDocuments       Int   @default(0) // Total number of documents in the namespace
+  totalPages           Float @default(0.0)
+  totalPlaygroundUsage Int   @default(0) // Total number of playground requests in the namespace
+
+  // TODO: remove this
+  keywordEnabled Boolean @default(false) // whether keyword + hybrid search is enabled
+
+  hosting      Hosting?
+  /// Hosting sites that pull this namespace in as a second corpus.
+  secondaryFor Hosting[] @relation("HostingSecondaryNamespace")
+
+  status NamespaceStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, slug]) // A namespace must have a unique slug within an organization
+  @@index([status])
+  @@index([organizationId, status]) // For filtering active namespaces
+  @@map("namespace")
+}
+
+model Hosting {
+  id          String    @id @default(cuid())
+  namespaceId String    @unique
+  namespace   Namespace @relation(fields: [namespaceId], references: [id], onDelete: Cascade)
+
+  title  String?
+  slug   String? @unique
+  logo   String?
+  domain Domain?
+
+  // open graph settings
+  ogTitle       String?
+  ogDescription String? @db.Text
+  ogImage       String?
+
+  // chat settings
+  systemPrompt         String?  @db.Text
+  exampleQuestions     String[] @default([]) @db.Text
+  citationMetadataPath String? // Path to use for citation metadata (e.g. "title" or "foo.bar")
+  welcomeMessage       String?
+
+  // search settings
+  searchEnabled        Boolean  @default(true)
+  exampleSearchQueries String[] @default([]) @db.Text
+
+  // model configuration
+  /// [HostingRerankConfig]
+  rerankConfig     Json?
+  /// [HostingLLMConfig]
+  llmConfig        Json?
+  /// Model that chooses the search queries, when it differs from the one that
+  /// writes the answer. Retrieval and writing are different jobs and the
+  /// evaluation separates on them.
+  /// [HostingLLMConfig]
+  extractionConfig Json?
+
+  // retrieval configuration
+  topK Int @default(50) // Number of documents to retrieve from vector store
+
+  /// Which corpora the search tool draws from. PRIMARY is this namespace alone;
+  /// SECONDARY swaps in secondaryNamespace instead; BOTH searches each and
+  /// reranks the pooled candidates together, since hybrid scores from separate
+  /// collections rank within their own collection and cannot be compared.
+  retrievalMode        RetrievalMode @default(PRIMARY)
+  secondaryNamespaceId String?
+  secondaryNamespace   Namespace?    @relation("HostingSecondaryNamespace", fields: [secondaryNamespaceId], references: [id], onDelete: SetNull)
+
+  protected           Boolean  @default(true) // Whether the namespace is protected from public access
+  allowedEmails       String[] @default([]) // relevant when protected is true
+  allowedEmailDomains String[] @default([]) // relevant when protected is true
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Domain {
+  id       String  @id @default(cuid())
+  slug     String  @unique
+  verified Boolean @default(false)
+
+  lastChecked DateTime @default(now())
+
+  hosting   Hosting @relation(fields: [hostingId], references: [id], onDelete: Cascade)
+  hostingId String  @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index(lastChecked(sort: Asc))
+}
+
+enum CorpusProfile {
+  /// classical Arabic scholarship — books organised by bāb and masʾala
+  CLASSICAL
+  /// published question-and-answer rulings from a fatwa body
+  FATWA
+  /// a contemporary encyclopedia of rulings on modern issues
+  ENCYCLOPEDIA
+}
+
+enum RetrievalMode {
+  PRIMARY
+  SECONDARY
+  /// Comparison playground only — a third standalone corpus. Hosting has no
+  /// tertiaryNamespaceId, and its corpus selector never emits this.
+  TERTIARY
+  BOTH
+}

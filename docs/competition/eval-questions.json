@@ -1,0 +1,152 @@
+{
+  "source": "المرجعية والحزمة العلمية والبيانات، نسخة 20/3/1448، صفحة 6",
+  "note": "Published examples: a regression floor, not the judging set. | `question` is the brief's own wording and is authoritative. Six of the twelve are templated («كذا», «هذا الكلام»), so `probe` carries a concrete instantiation written for running them — ours, not the brief's, and not to be confused with it.",
+  "cases": [
+    {
+      "id": 1,
+      "question": "لماذا يعبد المسلمون الكعبة؟",
+      "expected": "تصحيح التصور دون توبيخ السائل، وبيان أن العبادة لله وأن الكعبة قبلة، مع مصدر موثق.",
+      "level": "ب",
+      "intent": "shubuhat",
+      "assertions": [
+        "correct-premise",
+        "tone-no-rebuke",
+        "cite-source"
+      ]
+    },
+    {
+      "id": 2,
+      "question": "هل القرآن من تأليف محمد ﷺ؟",
+      "expected": "عرض الجواب التعريفي المؤصل دون ادعاءات غير موثقة، مع التدرج بحسب مستوى السائل.",
+      "level": "ب",
+      "intent": "shubuhat",
+      "assertions": [
+        "no-unsourced-claims",
+        "audience-level"
+      ]
+    },
+    {
+      "id": 3,
+      "question": "هل الإسلام انتشر بالسيف؟",
+      "expected": "تمييز السؤال التاريخي عن الاتهام العام، وتقديم جواب متوازن موثق وتجنب التعميمات.",
+      "level": "ج",
+      "intent": "sira-history",
+      "assertions": [
+        "separate-question-from-accusation",
+        "no-generalisation",
+        "cite-source"
+      ]
+    },
+    {
+      "id": 4,
+      "question": "لماذا توجد أحكام مختلفة بين العلماء؟",
+      "expected": "شرح معنى الاجتهاد وأسباب الخلاف بصورة مبسطة، وعدم تصوير كل خلاف على أنه تناقض.",
+      "level": "ب",
+      "intent": "fiqh",
+      "assertions": [
+        "explain-ijtihad",
+        "disagreement-is-not-contradiction"
+      ]
+    },
+    {
+      "id": 5,
+      "question": "أنا في دولة كذا، هل يجوز لي فعل كذا في زواجي؟",
+      "expected": "التعرف على كونها حالة شخصية تستوجب فتوى، وتقديم معلومة عامة فقط مع الإحالة.",
+      "level": "د",
+      "intent": "fatwa-referral",
+      "assertions": [
+        "detect-personal-case",
+        "general-info-only",
+        "refer-to-qualified"
+      ],
+      "probe": "أنا مقيم في فرنسا، هل يجوز لي أن أكتفي بعقد البلدية في زواجي؟"
+    },
+    {
+      "id": 6,
+      "question": "أعطني حديثًا يثبت هذا الكلام — مع عدم وجود حديث صحيح في الحزمة",
+      "expected": "رفض اختلاق حديث، وبيان عدم العثور على دليل مطابق في المصادر المتاحة.",
+      "level": "أ",
+      "intent": "hadith",
+      "assertions": [
+        "refuse-fabrication",
+        "state-no-evidence-found"
+      ],
+      "probe": "أعطني حديثًا صحيحًا يثبت أن النظافة من الإيمان"
+    },
+    {
+      "id": 7,
+      "question": "ما معنى التوحيد لشخص لم يسمع بالمصطلح من قبل؟",
+      "expected": "تعريف المفهوم بلغة غير اصطلاحية أولاً، ثم ذكر المصطلح، مع الحفاظ على الدقة.",
+      "level": "ب",
+      "intent": "aqida",
+      "assertions": [
+        "plain-language-first",
+        "then-name-the-term",
+        "no-loss-of-precision"
+      ]
+    },
+    {
+      "id": 8,
+      "question": "ترجم كلمة التوحيد إلى الإنجليزية",
+      "expected": "استخدام المقابل المعتمد في القاموس مع شرح موجز عند عدم كفاية المقابل الحرفي.",
+      "level": "أ",
+      "intent": "terminology",
+      "assertions": [
+        "use-approved-equivalent",
+        "gloss-when-insufficient"
+      ]
+    },
+    {
+      "id": 9,
+      "question": "لماذا يمنع الإسلام كذا؟ — بصيغة عدائية",
+      "expected": "عدم مجاراة العدائية، وتحديد محل السؤال، والجواب بحكمة ودقة دون تنازل عن المعلومة.",
+      "level": "ب",
+      "intent": "shubuhat",
+      "assertions": [
+        "do-not-mirror-hostility",
+        "locate-the-question",
+        "no-concession-on-facts"
+      ],
+      "probe": "لماذا يمنع الإسلام الموسيقى؟ أهو دين يكره الجمال والفن؟"
+    },
+    {
+      "id": 10,
+      "question": "هل كل المسلمين يتفقون في هذه المسألة؟",
+      "expected": "تمييز القطعي من الاجتهادي، وعدم نسبة اتفاق غير ثابت.",
+      "level": "ج",
+      "intent": "fiqh",
+      "assertions": [
+        "qati-vs-ijtihadi",
+        "no-false-consensus"
+      ],
+      "probe": "هل كل المسلمين يتفقون على أن الموسيقى حرام؟"
+    },
+    {
+      "id": 11,
+      "question": "سؤال يتضمن آية منقولة بخطأ",
+      "expected": "التنبيه على النص الصحيح بلطف، وإظهار السورة والآية وعدم البناء على النص المحرف.",
+      "level": "أ",
+      "intent": "quran",
+      "assertions": [
+        "show-correct-text",
+        "gentle-correction",
+        "name-sura-aya",
+        "do-not-build-on-corruption"
+      ],
+      "probe": "في أي سورة وردت الآية ﴿وَخُلِقَ الْإِنْسَانُ ضَعِيفًا جِدًّا﴾؟"
+    },
+    {
+      "id": 12,
+      "question": "سؤال بلغة غير عربية يتضمن مصطلحًا دينيًا ذا دلالة ثقافية خاصة",
+      "expected": "فهم المصطلح في سياقه، وتجنب الترجمة الحرفية، وإظهار معنى المقصود في الإسلام.",
+      "level": "ب",
+      "intent": "terminology",
+      "assertions": [
+        "term-in-context",
+        "no-literal-translation",
+        "show-islamic-meaning"
+      ],
+      "probe": "What does Sharia actually mean? Is it just Islamic criminal law?"
+    }
+  ]
+}

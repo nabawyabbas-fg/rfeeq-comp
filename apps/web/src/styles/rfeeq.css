@@ -1,0 +1,550 @@
+/*
+ * خط عثمان طه — KFGQPC Uthmanic Script HAFS, the muṣḥaf's own hand.
+ *
+ * Self-hosted because it is on no font CDN: Google Fonts does not carry it, and
+ * الدرر/قرآن complex's own host refuses this server. The file came from npm
+ * (`kfgqpc-uthmanic-script-hafs-regular@1.0.0`) and sits in `public/fonts`
+ * **byte for byte as published** — its licence grants Use, Copy and Distribute
+ * free of cost but forbids modification, so it is deliberately not subsetted,
+ * not re-compressed and not converted to WOFF2. 246 KB of OTF is the price of
+ * shipping it lawfully. The licence text travels beside it.
+ *
+ * `font-display: swap` and no preload: the matn is below the fold of a streamed
+ * answer, and blocking first paint on a quarter-megabyte face would cost more
+ * than it buys.
+ */
+@font-face {
+  font-family: "KFGQPC Uthmanic Script HAFS";
+  src: url("/fonts/KFGQPC-UthmanicScript-HAFS.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+
+  /*
+   * Only what the face actually draws — 99 codepoints, measured from its glyf
+   * table, not assumed from its cmap.
+   *
+   * Its cmap claims the whole Arabic block, but 172 of those 256 entries point
+   * at one shared placeholder outline 1442 units wide (an alef is 360): every
+   * Persian, Urdu and Sindhi letter, the extended digits, the honorific signs,
+   * and — the one that shows — «،» «؛» «؟». A comma set in this face came out
+   * as a large wrong mark, because the font was answering for a character it
+   * has no glyph for.
+   *
+   * `unicode-range` makes the browser skip the face for those and fall through
+   * to the next family per glyph, which is ordinary CSS fallback. It selects
+   * the font; it does not touch it, so the licence's bar on modification is
+   * untouched — which rules out the alternative of subsetting the file.
+   */
+  unicode-range:
+    U+0020, U+0030-0039, U+0621-063A, U+0640-0657, U+065C, U+065E,
+    U+0660-0669, U+066E, U+0670-0671, U+06D6-06DE, U+06E0-06E2,
+    U+06E4-06E9, U+06EC, U+200C-200F;
+}
+
+/*
+ * Rfeeq design tokens — ported verbatim from the approved interactive prototype
+ * (رفيق — النموذج التفاعلي, v1.7).
+ *
+ * Every value here is a transcription, not a re-derivation: the prototype's
+ * Arabic type scale and green palette were tuned over seven revisions, so the
+ * numbers are the specification. Rebuilding the components in Tailwind is safe
+ * only because the tokens they compose from are identical.
+ *
+ * Namespaced `rf-` throughout. The dashboard shares this stylesheet and still
+ * runs on shadcn's `--color-accent` / `--color-background`; an un-prefixed
+ * token would silently repaint it.
+ */
+
+/*
+ * The matn's weight, as a class the three renderers share.
+ *
+ * A utility rather than three copies of the same two declarations: the answer's
+ * typed sections, the inline quote renderer and the تفاصيل الحديث pane all set
+ * the same text, and they must never drift apart on how heavily it is drawn.
+ */
+.rf-matn {
+  -webkit-text-stroke: var(--rf-matn-weight) currentColor;
+  font-synthesis-weight: none;
+}
+
+/* ---- light (also the base every dark block overrides) ---- */
+:root {
+  --rf-bg: #f6f7f3;
+  --rf-surface: #ffffff;
+  --rf-surface-2: #eef1ec;
+  --rf-line: #dde3dc;
+  --rf-line-strong: #7c8a85;
+  --rf-text: #14201d;
+  --rf-text-2: #45534e;
+  --rf-text-3: #5e6c67;
+  --rf-accent: #0e6a5a;
+  --rf-accent-strong: #0a5344;
+  --rf-on-accent: #ffffff;
+  --rf-accent-soft: #dcefea;
+  --rf-trust: #8a5a00;
+  --rf-trust-soft: #fbf1da;
+  --rf-trust-line: #c99a3b;
+  --rf-danger: #b3261e;
+  --rf-danger-soft: #fbe9e7;
+  --rf-on-danger: #ffffff;
+  --rf-success: #1b7a3e;
+  --rf-success-soft: #e1f3e8;
+  --rf-focus: #0e6a5a;
+  --rf-scrim: rgb(12 20 18 / 0.48);
+  --rf-toast-bg: #1c2a26;
+  --rf-toast-fg: #f2f7f5;
+  --rf-toast-act: #7fe0c8;
+  --rf-apple-bg: #14201d;
+  --rf-apple-fg: #ffffff;
+  --rf-logo: #095b27;
+
+  /* evidence-type hues: قرآن / سنة / إجماع / قياس */
+  --rf-t-q: #a07a2e;
+  --rf-t-s: #2e7d4f;
+  --rf-t-i: #5b4e91;
+  --rf-t-k: #9a4e6e;
+
+  --rf-sh-1: 0 1px 2px rgb(20 32 29 / 0.08), 0 1px 3px rgb(20 32 29 / 0.06);
+  --rf-sh-2: 0 4px 12px rgb(20 32 29 / 0.1);
+  --rf-sh-3: 0 10px 28px rgb(20 32 29 / 0.16);
+  --rf-sh-sheet: 0 -10px 36px rgb(20 32 29 / 0.18);
+
+  /*
+   * Reader font-size preference (A18). The prototype scales body and Qurʾānic
+   * type together off one multiplier so a larger setting never changes the
+   * relationship between an āya and the prose explaining it.
+   */
+  --rf-scale: 1;
+}
+
+/* ---- dark ----
+ * Three selectors, deliberately. An explicit choice stamps `data-theme`
+ * (and next-themes also stamps `.dark`); the default "system" setting stamps
+ * neither, so only the media query separates light from dark there. The
+ * `:not()` guards keep an explicit *light* choice light on a dark-set OS —
+ * without them the dashboard, which pins itself light, would flip. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not(.light) {
+    --rf-bg: #121514;
+    --rf-surface: #191d1b;
+    --rf-surface-2: #212624;
+    --rf-line: #2b312e;
+    --rf-line-strong: #6e7973;
+    --rf-text: #e8ebe8;
+    --rf-text-2: #a8b0ab;
+    --rf-text-3: #8e9792;
+    --rf-accent: #4fc08d;
+    --rf-accent-strong: #6fd3a6;
+    --rf-on-accent: #0b2019;
+    --rf-accent-soft: #1b3a30;
+    --rf-trust: #c8af7a;
+    --rf-trust-soft: #2a2519;
+    --rf-trust-line: #8c7640;
+    --rf-danger: #ff8a80;
+    --rf-danger-soft: #3a2527;
+    --rf-on-danger: #3a0a07;
+    --rf-success: #6fd39a;
+    --rf-success-soft: #1d3a2c;
+    --rf-focus: #4fc08d;
+    --rf-scrim: rgb(0 0 0 / 0.66);
+    --rf-toast-bg: #e8ebe8;
+    --rf-toast-fg: #121514;
+    --rf-toast-act: #136a48;
+    --rf-apple-bg: #e8ebe8;
+    --rf-apple-fg: #121514;
+    --rf-logo: #4fc08d;
+    --rf-t-q: #d2b075;
+    --rf-t-s: #6cc08c;
+    --rf-t-i: #a99de0;
+    --rf-t-k: #d598b6;
+    --rf-sh-1: 0 1px 2px rgb(0 0 0 / 0.45);
+    --rf-sh-2: 0 4px 12px rgb(0 0 0 / 0.5);
+    --rf-sh-3: 0 10px 28px rgb(0 0 0 / 0.6);
+    --rf-sh-sheet: 0 -10px 36px rgb(0 0 0 / 0.65);
+  }
+}
+
+:root[data-theme="dark"],
+[data-theme="dark"],
+:root.dark,
+.dark {
+  --rf-bg: #121514;
+  --rf-surface: #191d1b;
+  --rf-surface-2: #212624;
+  --rf-line: #2b312e;
+  --rf-line-strong: #6e7973;
+  --rf-text: #e8ebe8;
+  --rf-text-2: #a8b0ab;
+  --rf-text-3: #8e9792;
+  --rf-accent: #4fc08d;
+  --rf-accent-strong: #6fd3a6;
+  --rf-on-accent: #0b2019;
+  --rf-accent-soft: #1b3a30;
+  --rf-trust: #c8af7a;
+  --rf-trust-soft: #2a2519;
+  --rf-trust-line: #8c7640;
+  --rf-danger: #ff8a80;
+  --rf-danger-soft: #3a2527;
+  --rf-on-danger: #3a0a07;
+  --rf-success: #6fd39a;
+  --rf-success-soft: #1d3a2c;
+  --rf-focus: #4fc08d;
+  --rf-scrim: rgb(0 0 0 / 0.66);
+  --rf-toast-bg: #e8ebe8;
+  --rf-toast-fg: #121514;
+  --rf-toast-act: #136a48;
+  --rf-apple-bg: #e8ebe8;
+  --rf-apple-fg: #121514;
+  --rf-logo: #4fc08d;
+  --rf-t-q: #d2b075;
+  --rf-t-s: #6cc08c;
+  --rf-t-i: #a99de0;
+  --rf-t-k: #d598b6;
+  --rf-sh-1: 0 1px 2px rgb(0 0 0 / 0.45);
+  --rf-sh-2: 0 4px 12px rgb(0 0 0 / 0.5);
+  --rf-sh-3: 0 10px 28px rgb(0 0 0 / 0.6);
+  --rf-sh-sheet: 0 -10px 36px rgb(0 0 0 / 0.65);
+}
+
+/*
+ * `inline` so each utility resolves the variable at use site rather than
+ * baking in the light value — that is what lets one `bg-rf-surface` follow the
+ * theme instead of needing a `dark:` twin on every element.
+ */
+@theme inline {
+  --color-rf-bg: var(--rf-bg);
+  --color-rf-surface: var(--rf-surface);
+  --color-rf-surface-2: var(--rf-surface-2);
+  --color-rf-line: var(--rf-line);
+  --color-rf-line-strong: var(--rf-line-strong);
+  --color-rf-text: var(--rf-text);
+  --color-rf-text-2: var(--rf-text-2);
+  --color-rf-text-3: var(--rf-text-3);
+  --color-rf-accent: var(--rf-accent);
+  --color-rf-accent-strong: var(--rf-accent-strong);
+  --color-rf-on-accent: var(--rf-on-accent);
+  --color-rf-accent-soft: var(--rf-accent-soft);
+  --color-rf-trust: var(--rf-trust);
+  --color-rf-trust-soft: var(--rf-trust-soft);
+  --color-rf-trust-line: var(--rf-trust-line);
+  --color-rf-danger: var(--rf-danger);
+  --color-rf-danger-soft: var(--rf-danger-soft);
+  --color-rf-on-danger: var(--rf-on-danger);
+  --color-rf-success: var(--rf-success);
+  --color-rf-success-soft: var(--rf-success-soft);
+  --color-rf-focus: var(--rf-focus);
+  --color-rf-scrim: var(--rf-scrim);
+  --color-rf-toast-bg: var(--rf-toast-bg);
+  --color-rf-toast-fg: var(--rf-toast-fg);
+  --color-rf-toast-act: var(--rf-toast-act);
+  --color-rf-apple-bg: var(--rf-apple-bg);
+  --color-rf-apple-fg: var(--rf-apple-fg);
+  --color-rf-logo: var(--rf-logo);
+  --color-rf-q: var(--rf-t-q);
+  --color-rf-s: var(--rf-t-s);
+  --color-rf-i: var(--rf-t-i);
+  --color-rf-k: var(--rf-t-k);
+
+  /*
+   * Self-hosted through next/font (see the root layout), so these name the
+   * generated variables rather than the Google families — a literal
+   * "IBM Plex Sans Arabic" would not resolve. The fallbacks still matter: they
+   * cover the moment before the face loads, and Tahoma/Traditional Arabic are
+   * the system faces that come closest in width.
+   */
+  --font-rf-ui:
+    var(--font-plex-arabic), "Segoe UI", Tahoma, "Noto Sans Arabic", system-ui,
+    sans-serif;
+  /*
+   * The revealed word, in the muṣḥaf's own hand.
+   *
+   * KFGQPC Uthmanic Script HAFS is drawn for exactly this text — Uthmanic
+   * orthography with full tashkīl, the small alif, the waqf marks and the āya
+   * mark ۝ (U+06DD), all inside its `unicode-range`. Scheherazade stays behind
+   * it: a reading naskh that carries the same marks legibly if the face fails
+   * to load, and that answers for the Latin and punctuation the muṣḥaf face
+   * does not draw.
+   *
+   * It has one weight. Anything setting Qurʾānic text must therefore leave it
+   * at 400 — `font-semibold` here is a browser-synthesised bold, and on this
+   * script that runs the tashkīl into the letters beneath it.
+   */
+  --font-rf-quran:
+    "KFGQPC Uthmanic Script HAFS", var(--font-scheherazade),
+    "Traditional Arabic", serif;
+  --font-rf-mushaf: var(--font-amiri-quran), var(--font-scheherazade), serif;
+  /*
+   * The matn face: عثمان طه itself.
+   *
+   * It draws 99 codepoints: the Arabic letters, the tashkīl, the Qurʾānic
+   * marks, and Arabic-Indic digits. Everything else — Latin, « », and the
+   * Arabic punctuation «،» «؛» «؟» — is excluded by the `unicode-range` on the
+   * face above and falls through per glyph to the families after it.
+   *
+   * It ships **Regular only** (`usWeightClass: 400`); KFGQPC publishes no bold
+   * cut of it. So weight on the matn cannot be a drawn 700 and is handled as
+   * `--rf-matn-weight` below instead.
+   */
+  --font-rf-matn: "KFGQPC Uthmanic Script HAFS", var(--font-amiri),
+    var(--font-amiri-quran), var(--font-scheherazade), serif;
+
+  /*
+   * How the matn is weighted, given the face has one weight.
+   *
+   * `font-weight: bold` on a single-weight face makes the browser *synthesise*
+   * one — drawing the glyph twice at an offset — and on a naskh carrying tashkīl
+   * that thickens strokes unevenly and runs the diacritics into the letters
+   * beneath them. A uniform hairline stroke in the text's own colour thickens
+   * every contour by the same amount instead, which is what a heavier cut would
+   * have done. 0.3px is about the weight of a semibold at 16px.
+   *
+   * Set this to 0 for the face exactly as drawn; `font-synthesis-weight: none`
+   * on the element guarantees no browser quietly smears it either way.
+   */
+  --rf-matn-weight: 0.3px;
+
+  /* Arabic needs generous leading; every pair is the prototype's own. */
+  --text-rf-display: 36px;
+  --text-rf-display--line-height: 54px;
+  --text-rf-h1: 28px;
+  --text-rf-h1--line-height: 42px;
+  --text-rf-h2: 22px;
+  --text-rf-h2--line-height: 34px;
+  --text-rf-h3: 18px;
+  --text-rf-h3--line-height: 28px;
+  --text-rf-body: calc(16px * var(--rf-scale));
+  --text-rf-body--line-height: calc(28px * var(--rf-scale));
+  --text-rf-body-sm: 14px;
+  --text-rf-body-sm--line-height: 24px;
+  --text-rf-label: 14px;
+  --text-rf-label--line-height: 20px;
+  --text-rf-caption: 12px;
+  --text-rf-caption--line-height: 18px;
+  --text-rf-quran-lg: calc(32px * var(--rf-scale));
+  --text-rf-quran-lg--line-height: calc(62px * var(--rf-scale));
+  --text-rf-quran: calc(26px * var(--rf-scale));
+  --text-rf-quran--line-height: calc(50px * var(--rf-scale));
+  --text-rf-quran-sm: calc(22px * var(--rf-scale));
+  --text-rf-quran-sm--line-height: calc(42px * var(--rf-scale));
+
+  /*
+   * Answer-body scale, synced to the design system on 6 October 2026 (v1.10).
+   *
+   * The answer sets its own sizes rather than borrowing the display scale
+   * above: body 16/2, section headings 16/1.5, revealed text 16 at weight 400
+   * on a fixed 50px leading.
+   *
+   * That leading is the part worth not "fixing". 50px against a 16px face is
+   * enormous by prose standards and deliberate — it is muṣḥaf setting, where
+   * the space between lines is what makes pointed Arabic legible. It is a
+   * length, not a multiple, so it does not grow with the size.
+   */
+  --text-rf-answer: calc(16px * var(--rf-scale));
+  --text-rf-answer--line-height: 2;
+  /*
+   * Revealed text, 22 on a 50px leading.
+   *
+   * The leading is left where the prototype tuned it rather than scaled with
+   * the size: at 16px it was a ratio of 3.1, at 22 it is 2.27, and that is
+   * still looser than the matn's 2 — which is the ordering that matters. The
+   * muṣḥaf hand carries marks above and below the line, and taking room away
+   * from them is the one thing a larger size must not do.
+   */
+  --text-rf-answer-q: calc(24px * var(--rf-scale));
+  --text-rf-answer-q--line-height: calc(50px * var(--rf-scale));
+
+  /*
+   * A narration, 22 on a leading of 2.
+   *
+   * Its own token rather than `--text-rf-answer`, which is the answer body's
+   * size — every paragraph, list item and table cell. The matn had been
+   * borrowing it, so raising the matn to 22 through that token would have taken
+   * the whole answer with it.
+   */
+  --text-rf-matn: calc(22px * var(--rf-scale));
+  --text-rf-matn--line-height: 2;
+  --text-rf-answer-h: calc(16px * var(--rf-scale));
+  --text-rf-answer-h--line-height: 1.5;
+  /* a heading inside a sub-block (the fiqh masʾala), one step down */
+  --text-rf-answer-hs: calc(15px * var(--rf-scale));
+  --text-rf-answer-hs--line-height: 1.5;
+  /* the ruling line that opens a fiqh answer */
+  --text-rf-answer-rule: calc(17px * var(--rf-scale));
+  --text-rf-answer-rule--line-height: 1.9;
+  /* a source caption under a heading — «من المختصر في تفسير القرآن الكريم» */
+  --text-rf-answer-cap: calc(13.5px * var(--rf-scale));
+  --text-rf-answer-cap--line-height: 1.7;
+  --text-rf-answer-qh: calc(18px * var(--rf-scale));
+  --text-rf-answer-qh--line-height: 1.6;
+
+  /*
+   * The design's own breakpoint. 760px, not Tailwind's 768px `md`: in the
+   * prototype this is a container query on the app frame, and the layout it
+   * switches (sidebar out, top bar gains a brand and a menu button) was tuned
+   * at that width. Used as `max-rf:` — the rules are all mobile overrides of a
+   * desktop-first layout.
+   */
+  --breakpoint-rf: 760px;
+  /* the narrower step, where the top navigation drops its wordmark */
+  --breakpoint-rf-sm: 640px;
+
+  --radius-rf-xs: 6px;
+  --radius-rf-sm: 10px;
+  --radius-rf-md: 14px;
+  --radius-rf-lg: 20px;
+  --radius-rf-xl: 28px;
+
+  --shadow-rf-1: var(--rf-sh-1);
+  --shadow-rf-2: var(--rf-sh-2);
+  --shadow-rf-3: var(--rf-sh-3);
+  --shadow-rf-sheet: var(--rf-sh-sheet);
+}
+
+/*
+ * Motion. Also transcribed: the composer placeholder cycle and the sign-in
+ * panel's drift are timed against each other in the prototype, so the
+ * durations are not free parameters.
+ *
+ * Nothing here is essential to reading an answer, so `prefers-reduced-motion`
+ * is honoured globally in globals.css rather than per-component.
+ */
+@theme inline {
+  --animate-rf-spin: rf-rot 0.8s linear infinite;
+  --animate-rf-shake: rf-shake 0.3s;
+  --animate-rf-shimmer: rf-sh 1.4s linear infinite;
+  --animate-rf-pulse: rf-pl 1s infinite ease-in-out;
+  --animate-rf-placeholder: rf-ph 16s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+  --animate-rf-drift: rf-drift 22s linear infinite;
+  --animate-rf-breathe: rf-breathe 7s ease-in-out infinite;
+  --animate-rf-sheen: rf-sheen 20s ease-in-out infinite alternate;
+
+  @keyframes rf-rot {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes rf-shake {
+    25% {
+      transform: translateX(-6px);
+    }
+    75% {
+      transform: translateX(6px);
+    }
+  }
+  @keyframes rf-sh {
+    to {
+      background-position: -200% 0;
+    }
+  }
+  @keyframes rf-pl {
+    0%,
+    80%,
+    100% {
+      opacity: 0.3;
+      transform: scale(0.8);
+    }
+    40% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  /* each line holds for ~18% of the cycle, then lifts out as the next rises */
+  @keyframes rf-ph {
+    0% {
+      opacity: 0;
+      transform: translateY(calc(-50% + 10px));
+    }
+    4%,
+    22% {
+      opacity: 1;
+      transform: translateY(-50%);
+    }
+    26%,
+    100% {
+      opacity: 0;
+      transform: translateY(calc(-50% - 10px));
+    }
+  }
+  @keyframes rf-drift {
+    from {
+      mask-position: 50% 50%;
+    }
+    to {
+      mask-position: calc(50% + 128px) calc(50% + 64px);
+    }
+  }
+  @keyframes rf-breathe {
+    0%,
+    100% {
+      opacity: 0.08;
+    }
+    50% {
+      opacity: 0.18;
+    }
+  }
+  @keyframes rf-sheen {
+    0% {
+      background-position:
+        10% 15%,
+        0 0;
+    }
+    50% {
+      background-position:
+        90% 50%,
+        0 0;
+    }
+    100% {
+      background-position:
+        25% 90%,
+        0 0;
+    }
+  }
+}
+
+/*
+ * The geometric pattern behind the sign-in panel, as a mask so it tints with
+ * the accent rather than carrying its own colour. Inlined because a CSS
+ * variable is the only way to reuse one data URI across the two mask
+ * properties without repeating 600 characters.
+ */
+@layer utilities {
+  .rf-pattern-mask {
+    --rf-pattern: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2264%22 height=%2264%22 viewBox=%220 0 64 64%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%221.1%22%3E%3Cg id=%22s%22%3E%3Crect x=%2220%22 y=%2220%22 width=%2224%22 height=%2224%22/%3E%3Crect x=%2220%22 y=%2220%22 width=%2224%22 height=%2224%22 transform=%22rotate%2845 32 32%29%22/%3E%3Ccircle cx=%2232%22 cy=%2232%22 r=%223.5%22/%3E%3C/g%3E%3Cuse href=%22%23s%22 x=%22-32%22 y=%22-32%22/%3E%3Cuse href=%22%23s%22 x=%2232%22 y=%22-32%22/%3E%3Cuse href=%22%23s%22 x=%22-32%22 y=%2232%22/%3E%3Cuse href=%22%23s%22 x=%2232%22 y=%2232%22/%3E%3Cpath d=%22M32 0v12M32 52v12M0 32h12M52 32h12%22 stroke-width=%221%22/%3E%3C/svg%3E");
+    -webkit-mask: var(--rf-pattern) center / 64px 64px repeat;
+    mask: var(--rf-pattern) center / 64px 64px repeat;
+  }
+
+  /*
+   * The sign-in panel's ground.
+   *
+   * A real utility rather than an arbitrary Tailwind value: this is a two-layer
+   * background whose first layer carries commas, a slash-separated size and a
+   * repeat keyword, and the arbitrary-value parser does not survive it — it
+   * silently drops the colour and leaves the panel pale, which is how this was
+   * found.
+   *
+   * The palette is pinned dark in both themes (v1.6). Deliberate: the panel
+   * exists to carry the wordmark and an āya, and a mark that changes colour
+   * with the reader's theme is a mark that is harder to recognise.
+   */
+  .rf-auth-panel {
+    color-scheme: dark;
+    color: #e8ebe8;
+    background:
+      radial-gradient(
+          closest-side,
+          rgb(111 211 166 / 0.18),
+          rgb(111 211 166 / 0)
+        )
+        15% 20% / 75% 75% no-repeat,
+      #1b3a30;
+  }
+
+  /* Qurʾānic text is justified in a muṣḥaf; the clone keeps a highlight
+     unbroken across line wraps. */
+  .rf-decoration-clone {
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+}

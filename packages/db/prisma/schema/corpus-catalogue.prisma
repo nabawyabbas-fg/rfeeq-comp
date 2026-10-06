@@ -1,0 +1,46 @@
+/// A work in the classical corpus, and who wrote it.
+///
+/// Mirrors the harvested turath catalogue so a question that names a source —
+/// "من كتاب لسان العرب فقط", "من مؤلفات ابن القيم" — can be resolved to the
+/// book ids the vector store filters on. The alternative the model reaches for
+/// otherwise is folding the title into the query text, which searches for
+/// passages *mentioning* the book rather than passages *from* it.
+///
+/// Kept in the database rather than bundled with the code so a re-harvest can
+/// refresh it without a deploy, and so resolution can use SQL matching.
+model CorpusBook {
+  /// The turath book id, which is also `bookId` in the vector store payload —
+  /// so a resolved row filters retrieval directly.
+  id Int @id
+
+  title String
+  /// Diacritics stripped, alif forms folded, `ابن`/`بن` unified, article
+  /// dropped. Matched against the same normalisation of what the user typed.
+  titleNormalized String
+
+  authorId   Int?
+  author     CorpusAuthor? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  category  String?
+  pageCount Int?
+
+  @@index([titleNormalized])
+  @@index([authorId])
+}
+
+model CorpusAuthor {
+  /// The turath author id.
+  id Int @id
+
+  name String
+  /// See CorpusBook.titleNormalized.
+  nameNormalized String
+
+  /// Year of death (hijri) where the catalogue records one; the usual way two
+  /// scholars sharing a name are told apart.
+  death Int?
+
+  books CorpusBook[]
+
+  @@index([nameNormalized])
+}

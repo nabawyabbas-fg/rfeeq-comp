@@ -1,0 +1,87 @@
+/// A saved conversation against a namespace.
+///
+/// Ownership is deliberately either/or: a signed-in user owns their chats by
+/// `userId`, while visitors to a public hosting site are identified by an
+/// opaque `anonymousId` cookie. Without the second case a public site could
+/// not offer history at all, since those visitors never authenticate.
+model Chat {
+  id    String  @id @default(cuid())
+  title String?
+
+  /// The corpus this conversation searched, where it searched one.
+  ///
+  /// Null on the Rfeeq consumer surface, which retrieves live from the
+  /// challenge's approved platforms and has no ingested corpus at all. It was
+  /// required, so that surface had to invent an id to satisfy the foreign key —
+  /// which violated it, failed every save with P2003, and left the history
+  /// panel permanently empty because the persistence hook swallows save errors
+  /// by design.
+  namespaceId String?
+  namespace   Namespace? @relation(fields: [namespaceId], references: [id], onDelete: Cascade)
+
+  /// Set when the chat happened on a hosting site rather than the playground.
+  hostingId String?
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Browser-scoped id for unauthenticated hosting visitors.
+  anonymousId String?
+
+  /// Set when this conversation is one pane of a corpus comparison. The three
+  /// panes are stored as three ordinary chats sharing this id, rather than one
+  /// merged record: each pane resolves its own citations against its own tool
+  /// outputs, so their messages must not be interleaved.
+  comparisonId  String?
+  /// Which pane of the comparison this is. Null for an ordinary chat.
+  retrievalMode RetrievalMode?
+
+  /// Public link key, set when the owner shares this conversation.
+  ///
+  /// A separate opaque id rather than the chat's own: the chat id appears in
+  /// the owner's URLs and in API responses, and a shared link has to be
+  /// revocable without destroying the conversation. Unsetting it breaks every
+  /// link that was handed out, which is what revoking should mean.
+  shareId  String?   @unique
+  sharedAt DateTime?
+
+  messages ChatMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([namespaceId, userId, updatedAt(sort: Desc)])
+  @@index([namespaceId, anonymousId, updatedAt(sort: Desc)])
+  @@index([comparisonId])
+  @@map("chat")
+}
+
+/// One turn in a saved conversation.
+model ChatMessage {
+  id     String @id @default(cuid())
+  chatId String
+  chat   Chat   @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  role String
+
+  /// The AI SDK UIMessage `parts` array, stored verbatim. Keeping the raw
+  /// parts (rather than just text) is what lets tool results, reasoning and
+  /// citations survive a reload — the citation pills resolve chunk ids against
+  /// the search/expand tool outputs, which live in these parts.
+  /// [ChatMessageParts]
+  parts Json
+
+  /// The UIMessage `metadata`, holding the cost/latency breakdown for an
+  /// assistant turn. Null for user turns and for turns saved before this
+  /// existed, which the UI renders by simply omitting the breakdown.
+  /// [ChatMessageMetadata]
+  metadata Json?
+
+  /// Position within the conversation.
+  position Int
+
+  createdAt DateTime @default(now())
+
+  @@index([chatId, position])
+  @@map("chat_message")
+}

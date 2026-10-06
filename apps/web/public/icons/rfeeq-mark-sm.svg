@@ -1,0 +1,18 @@
+<!--
+  رفيق, as a browser tab icon.
+
+  Drawn from the same paths `components/rfeeq/logo.tsx` uses, so the icon
+  cannot drift from the mark it stands for.
+
+  Two cuts, because one does not survive both sizes: the wordmark is
+  legible from 32px up and turns to mush at 16, where a single ر keeps a
+  clean silhouette. The size hints in `lib/metadata.ts` let the browser
+  pick between them.
+-->
+<!-- the ر alone — for 16px, where four letters cannot hold -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#095b27"/>
+  <g transform="translate(-88.574,-2.263) scale(0.5817)" fill="#ffffff">
+    <path d="M193.623 95.0001L192.523 82.3001C200.623 82.3001 206.523 79.1001 206.523 70.5001L206.423 24.7001L222.023 22.8V71.2001C222.023 88.5001 212.723 95.0001 193.623 95.0001Z"/>
+  </g>
+</svg>

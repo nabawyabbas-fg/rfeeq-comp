@@ -1,0 +1,12 @@
+-- A conversation does not always belong to a corpus.
+--
+-- The Rfeeq consumer surface retrieves live from the challenge's approved
+-- platforms and has no ingested namespace. With the column required it had to
+-- supply an id anyway; every value it could supply violated the foreign key,
+-- so each save failed with P2003 — and because history is saved best-effort,
+-- the failure was swallowed and the panel simply stayed empty.
+--
+-- Nullable rather than pointed at a placeholder namespace row: inventing a
+-- corpus to satisfy a constraint would make every "which corpus answered this"
+-- query lie.
+ALTER TABLE "chat" ALTER COLUMN "namespaceId" DROP NOT NULL;

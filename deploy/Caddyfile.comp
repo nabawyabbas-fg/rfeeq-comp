@@ -1,0 +1,27 @@
+# comp.rfeeq.ai — competition instance (host port 3001)
+#
+# APPLIED. This is a copy of the block live in
+# /home/ubuntu/app/sohba/deploy/Caddyfile, kept in the repo so the vhost travels
+# with the code. Editing this file alone changes nothing.
+#
+# That Caddyfile is bind-mounted into the adkar-caddy container. Never `sed -i`
+# it: a new inode leaves the container reading the old file while `caddy reload`
+# reports success. Append or edit in place, confirm the inode is unchanged, then
+# validate and reload.
+
+comp.rfeeq.ai {
+    encode gzip
+
+    # The competition instance of the qaf app — a separate clone running on the
+    # host as `next dev` on :3001, reached through the bridge gateway like
+    # stg.rfeeq.ai above. Distinct port and database, so this vhost and stg
+    # never share state.
+    reverse_proxy 172.18.0.1:3001 {
+        # Same reason as stg: the answer streams token by token.
+        flush_interval -1
+    }
+
+    request_body {
+        max_size 24MB
+    }
+}

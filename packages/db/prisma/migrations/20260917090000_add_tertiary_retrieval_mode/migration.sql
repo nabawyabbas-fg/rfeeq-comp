@@ -1,0 +1,12 @@
+-- A third standalone corpus for the comparison playground.
+--
+-- erej is a fourth body of material, not an alternative to the fatwa corpora:
+-- before this, a comparison run could only hold one "other" namespace, so
+-- adding erej meant displacing turath from the second pane. TERTIARY gives it
+-- its own pane, and BOTH now pools every selected corpus rather than exactly
+-- two.
+--
+-- Hosting shares this enum but keeps PRIMARY/SECONDARY/BOTH: its corpus
+-- selector is narrowed to those three and it has no tertiaryNamespaceId, so a
+-- site cannot be put into this mode.
+ALTER TYPE "RetrievalMode" ADD VALUE 'TERTIARY';
