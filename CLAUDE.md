@@ -14,7 +14,7 @@ that instance's database.
 | Origin | `https://comp.rfeeq.ai` | `https://stg.rfeeq.ai` |
 | Port | **3001** | 3000 |
 | Database | **`agentset_comp`** on :5433 | `agentset` on :5433 |
-| Git branch | **`competition`** on `origin` = `nabawyabbas-fg/rfeeq` | `main` |
+| Git branch | **`rfeeq-comp`** on `rfeeq-comp` = `nabawyabbas-fg/rfeeq-comp` (pushed as `main`) | `main` on `nabawyabbas-fg/rfeeq` |
 | Dev log | `/home/ubuntu/app/comp/next-dev.log` | `/home/ubuntu/app/qaf/next-dev.log` |
 
 Both can run at once. They share Postgres (different databases), the Qdrant
